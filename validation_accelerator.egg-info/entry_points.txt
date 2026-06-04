@@ -1,0 +1,2 @@
+[console_scripts]
+validation-accelerator = validation_accelerator.cli.main:main
