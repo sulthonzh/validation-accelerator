@@ -1,0 +1,99 @@
+# Validation Accelerator Configuration
+
+# Strategy for scheduling validation tasks
+strategies:
+  # Choose one: risk_based, parallel, sequential, adaptive
+  strategy: risk_based
+  
+  # Maximum number of concurrent validation tasks
+  max_concurrent: 4
+  
+  # Default timeout for validation tasks (seconds)
+  timeout: 300
+  
+  # Priority factors for risk-based scheduling
+  # Higher numbers = higher priority
+  priority_factors:
+    api_surface_changes: 3.0
+    security_tests: 3.0
+    public_interfaces: 2.5
+    database_changes: 2.0
+    ui_components: 1.5
+    utility_functions: 1.0
+    tests: 1.0
+    documentation: 0.5
+  
+  # Dependency groups - tasks in the same group can run in parallel
+  dependency_groups:
+    - ["lint", "security_scan"]
+    - ["unit_tests"]
+    - ["integration_tests"]
+    - ["e2e_tests"]
+  
+  # Timeout for each validation phase
+  phase_timeout:
+    fast_checks: 30
+    medium_checks: 300
+    slow_checks: 600
+
+# Adapter configuration for validation tools
+adapters:
+  # Pytest adapter for unit tests
+  pytest:
+    enabled: true
+    timeout: 120
+    extra_args: ["-x", "--tb=short"]
+    markers: ["unit", "integration", "e2e"]
+  
+  # ESLint adapter for JavaScript/TypeScript linting
+  eslint:
+    enabled: true
+    timeout: 60
+    config_file: ".eslintrc"
+    extra_args: ["--no-color", "--format=compact"]
+    extensions: [".js", ".ts", ".jsx", ".tsx"]
+  
+  # Mock adapter for testing (not for production use)
+  mock:
+    enabled: true
+    timeout: 10
+    simulate_timeout: false
+
+# Validation phases - ordered by priority
+phases:
+  # Fast checks that should complete quickly (< 30 seconds)
+  fast_checks:
+    - syntax_check
+    - import_validation
+    - type_checking
+  
+  # Medium checks that take moderate time (< 5 minutes)
+  medium_checks:
+    - static_analysis
+    - unit_tests
+  
+  # Slow checks that can run in background
+  slow_checks:
+    - integration_tests
+    - e2e_tests
+
+# Files and directories to exclude from validation
+excludes:
+  - node_modules
+  - .git
+  - dist
+  - build
+  - __pycache__
+  - .pytest_cache
+  - .coverage
+  - *.pyc
+  - *.pyo
+  - *.pyd
+  - .DS_Store
+  - Thumbs.db
+
+# Global timeout for entire validation process
+timeout: 300
+
+# Working directory for validation
+working_directory: .
