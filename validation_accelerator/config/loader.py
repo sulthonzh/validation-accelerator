@@ -7,7 +7,6 @@ import yaml
 from typing import Dict, Any, Optional
 from pathlib import Path
 from dataclasses import dataclass
-from enum import Enum
 
 from ..core.scheduler import SchedulerStrategy, SchedulerConfig
 
@@ -130,12 +129,10 @@ class ConfigLoader:
         """
         Load configuration from default locations.
         """
-        # Check current directory
         for config_path in self.config_file_paths:
             if os.path.exists(config_path):
                 return self._load_from_file(config_path)
         
-        # Check parent directories
         current_dir = Path.cwd()
         for parent in current_dir.parents:
             for config_path in self.config_file_paths:
@@ -143,29 +140,22 @@ class ConfigLoader:
                 if full_path.exists():
                     return self._load_from_file(str(full_path))
         
-        # No config found, use defaults
         return ValidationConfig.default()
     
     def _parse_config(self, config_data: Dict[str, Any]) -> ValidationConfig:
         """
         Parse configuration data into ValidationConfig.
         """
-        # Parse scheduler configuration
         scheduler_config = self._parse_scheduler_config(config_data.get('strategies', {}))
         
-        # Parse adapters configuration
         adapters_config = config_data.get('adapters', {})
         
-        # Parse phases configuration
         phases_config = config_data.get('phases', {})
         
-        # Parse excludes
         excludes = config_data.get('excludes', ValidationConfig.default().excludes)
         
-        # Parse timeout
         timeout = config_data.get('timeout', ValidationConfig.default().timeout)
         
-        # Parse working directory
         working_directory = config_data.get('working_directory', '.')
         
         return ValidationConfig(
@@ -181,28 +171,22 @@ class ConfigLoader:
         """
         Parse scheduler configuration.
         """
-        # Get strategy type
         strategy_name = strategies_config.get('strategy', 'risk_based')
         try:
             strategy = SchedulerStrategy(strategy_name)
         except ValueError:
             strategy = SchedulerStrategy.RISK_BASED
         
-        # Parse max concurrent
         max_concurrent = strategies_config.get('max_concurrent', 4)
         
-        # Parse timeout
         timeout = strategies_config.get('timeout', 300)
         
-        # Parse priority factors
         priority_factors = strategies_config.get('priority_factors', 
                                               ValidationConfig.default().scheduler.priority_factors)
         
-        # Parse dependency groups
         dependency_groups = strategies_config.get('dependency_groups', 
                                                ValidationConfig.default().scheduler.dependency_groups)
         
-        # Parse phase timeout
         phase_timeout = strategies_config.get('phase_timeout', 
                                             ValidationConfig.default().scheduler.phase_timeout)
         
@@ -226,14 +210,12 @@ class ConfigLoader:
             True if configuration is valid, False otherwise
         """
         try:
-            # Validate scheduler configuration
             if not isinstance(config.scheduler.max_concurrent, int) or config.scheduler.max_concurrent <= 0:
                 return False
             
             if not isinstance(config.scheduler.timeout, int) or config.scheduler.timeout <= 0:
                 return False
             
-            # Validate adapter configurations
             for adapter_name, adapter_config in config.adapters.items():
                 if not isinstance(adapter_config, dict):
                     return False
@@ -244,7 +226,6 @@ class ConfigLoader:
                 if 'timeout' in adapter_config and not isinstance(adapter_config['timeout'], (int, type(None))):
                     return False
             
-            # Validate phases
             if not isinstance(config.phases, dict):
                 return False
             
@@ -252,11 +233,9 @@ class ConfigLoader:
                 if not isinstance(phase_tasks, list):
                     return False
             
-            # Validate excludes
             if not isinstance(config.excludes, list):
                 return False
             
-            # Validate working directory
             if not isinstance(config.working_directory, str):
                 return False
             

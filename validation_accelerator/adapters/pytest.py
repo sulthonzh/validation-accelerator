@@ -2,13 +2,10 @@
 Pytest adapter for running unit tests.
 """
 
-import os
 import subprocess
 import sys
 import time
 from typing import Dict, List, Any, Optional
-from pathlib import Path
-import json
 
 from .base import BaseAdapter, ValidationTask, ValidationResult, ValidationResultStatus
 
@@ -27,14 +24,6 @@ class PytestAdapter(BaseAdapter):
             return pytest.__file__
         except ImportError:
             return None
-        
-        # Alternative: look in PATH
-        for path in os.environ.get("PATH", "").split(os.pathsep):
-            pytest_path = os.path.join(path, "pytest")
-            if os.path.isfile(pytest_path):
-                return pytest_path
-        
-        return None
     
     def validate(self, task: ValidationTask) -> ValidationResult:
         """
@@ -43,30 +32,24 @@ class PytestAdapter(BaseAdapter):
         start_time = time.time()
         
         try:
-            # Build pytest command
             cmd = [sys.executable, "-m", "pytest"]
             
-            # Add task-specific arguments
             if task.command:
                 cmd.extend(task.command)
             
-            # Add path to test
             if "path" in task.metadata:
                 cmd.append(task.metadata["path"])
             else:
                 cmd.append(".")  # Default to current directory
             
-            # Add common options
             cmd.extend([
                 "--tb=short",  # Short traceback format
                 "--strict-markers",  # Strict marker matching
                 "--disable-warnings",  # Reduce noise
             ])
             
-            # Add timeout if specified
             timeout = task.timeout or self.config.get("timeout", 300)
             
-            # Execute pytest
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -77,7 +60,6 @@ class PytestAdapter(BaseAdapter):
             
             duration = time.time() - start_time
             
-            # Parse results
             if result.returncode == 0:
                 status = ValidationResultStatus.SUCCESS
                 error = None
@@ -132,7 +114,6 @@ class PytestAdapter(BaseAdapter):
     
     def validate_config(self, config: Dict[str, Any]) -> bool:
         """Validate pytest configuration."""
-        required_keys = []
         optional_keys = ["timeout", "extra_args", "markers"]
         
         for key in config:
@@ -144,7 +125,3 @@ class PytestAdapter(BaseAdapter):
     def get_supported_types(self) -> List[str]:
         """Get supported validation task types."""
         return ["pytest", "unit_tests", "tests"]
-
-
-# Import time here to avoid circular import
-import time

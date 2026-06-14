@@ -68,29 +68,23 @@ class ESLintAdapter(BaseAdapter):
             if not self.is_available():
                 raise RuntimeError("ESLint is not available")
             
-            # Build eslint command
             cmd = [sys.executable, "-m", "eslint"]
             
-            # Add task-specific arguments
             if task.command:
                 cmd.extend(task.command)
             
-            # Add path to lint
             if "path" in task.metadata:
                 cmd.append(task.metadata["path"])
             else:
                 cmd.append(".")  # Default to current directory
             
-            # Add common options
             cmd.extend([
                 "--no-color",  # No color output for parsing
-                "--format=compact",  # Compact format
+                "--format=compact",
             ])
             
-            # Add timeout if specified
             timeout = task.timeout or self.config.get("timeout", 60)
             
-            # Execute eslint
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -101,7 +95,6 @@ class ESLintAdapter(BaseAdapter):
             
             duration = time.time() - start_time
             
-            # Parse results
             if result.returncode == 0:
                 status = ValidationResultStatus.SUCCESS
                 error = None
@@ -109,7 +102,6 @@ class ESLintAdapter(BaseAdapter):
                 status = ValidationResultStatus.FAILED
                 error = result.stderr or result.stdout
             
-            # Count errors if output is available
             error_count = 0
             if result.stdout:
                 error_count = result.stdout.count("error")
@@ -167,7 +159,6 @@ class ESLintAdapter(BaseAdapter):
     
     def validate_config(self, config: Dict[str, Any]) -> bool:
         """Validate ESLint configuration."""
-        required_keys = []
         optional_keys = ["timeout", "config_file", "extra_args", "extensions"]
         
         for key in config:
