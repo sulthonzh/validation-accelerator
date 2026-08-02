@@ -49,11 +49,9 @@ def validate(ctx, path, changed_files, strategy, max_concurrent, timeout):
     dry_run = ctx.obj["dry_run"]
     
     try:
-        # Load configuration
         config_loader = ConfigLoader()
         validation_config = config_loader.load_config(config_path)
         
-        # Override with command-line options
         validation_config.scheduler.strategy = SchedulerStrategy(strategy)
         validation_config.scheduler.max_concurrent = max_concurrent
         validation_config.scheduler.timeout = timeout
@@ -63,7 +61,6 @@ def validate(ctx, path, changed_files, strategy, max_concurrent, timeout):
             _dry_run_validation(validation_config, path, changed_files, verbose)
             return
         
-        # Get changed files
         if changed_files:
             changed_files_list = [f.strip() for f in changed_files.split(",")]
         else:
@@ -78,24 +75,18 @@ def validate(ctx, path, changed_files, strategy, max_concurrent, timeout):
             for f in changed_files_list:
                 click.echo(f"  - {f}")
         
-        # Initialize adapters
         adapters = _create_adapters(validation_config)
         
-        # Create scheduler
         scheduler_config = validation_config.scheduler
         scheduler = ValidationScheduler(scheduler_config, adapters)
         
-        # Run validation
         import asyncio
         results = asyncio.run(scheduler.schedule_validation(changed_files_list, path))
         
-        # Display results
         _display_results(results, verbose)
         
-        # Cleanup
         scheduler.cleanup()
         
-        # Exit with appropriate code
         if results["summary"]["failed_tasks"] > 0:
             sys.exit(1)
         elif results["summary"]["timeout_tasks"] > 0:
@@ -121,7 +112,6 @@ def init(output):
         config_loader = ConfigLoader()
         default_config = config_loader._parse_config({})
         
-        # Create default configuration
         config_data = {
             "strategies": {
                 "strategy": "risk_based",
@@ -138,7 +128,6 @@ def init(output):
             "working_directory": "."
         }
         
-        # Write to file
         import yaml
         with open(output, 'w', encoding='utf-8') as f:
             yaml.dump(config_data, f, default_flow_style=False, indent=2)
@@ -180,19 +169,16 @@ def analyze(ctx, path):
     Analyze changed files and show risk assessment.
     """
     try:
-        # Find changed files
         changed_files = _find_changed_files(path)
         
         if not changed_files:
             click.echo("No changed files found.")
             return
         
-        # Analyze changes
         from ..core.analyzer import ChangeAnalyzer
         analyzer = ChangeAnalyzer()
         file_changes = analyzer.analyze_changes(changed_files, path)
         
-        # Show results
         click.echo(f"📊 Analysis of {len(file_changes)} changed files:")
         click.echo()
         
@@ -230,7 +216,6 @@ def _find_changed_files(path: str) -> List[str]:
         one_hour_ago = datetime.now() - timedelta(hours=1)
         
         for root, dirs, files in os.walk(path):
-            # Skip excluded directories
             dirs[:] = [d for d in dirs if not d.startswith('.') and d != 'node_modules']
             
             for file in files:
@@ -238,7 +223,6 @@ def _find_changed_files(path: str) -> List[str]:
                 try:
                     mod_time = datetime.fromtimestamp(os.path.getmtime(file_path))
                     if mod_time > one_hour_ago:
-                        # Convert to relative path
                         rel_path = os.path.relpath(file_path, path)
                         changed_files.append(rel_path)
                 except:
@@ -332,7 +316,6 @@ def _display_results(results: dict, verbose: bool):
     click.echo(f"  Total time: {summary['execution_time']:.2f}s")
     click.echo()
     
-    # Show risk distribution
     click.echo("📊 Risk Distribution:")
     for risk_level, count in summary["risk_distribution"].items():
         if count > 0:
@@ -340,7 +323,6 @@ def _display_results(results: dict, verbose: bool):
             click.echo(f"  {emoji} {risk_level}: {count}")
     click.echo()
     
-    # Show high-risk files
     high_risk_files = [f for f in file_changes if f.risk_score >= 2.0]
     if high_risk_files:
         click.echo("⚠️  High-Risk Files:")
@@ -349,7 +331,6 @@ def _display_results(results: dict, verbose: bool):
             click.echo(f"  {emoji} {file_change.path} (score: {file_change.risk_score:.2f})")
         click.echo()
     
-    # Show detailed results if verbose
     if verbose:
         click.echo("🔍 Detailed Results:")
         for task_id, result in results["results"].items():

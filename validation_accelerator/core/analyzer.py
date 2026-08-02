@@ -5,11 +5,10 @@ Change analyzer for identifying high-risk areas in code changes.
 import os
 import ast
 import re
-from typing import Dict, List, Any, Set, Tuple
+from typing import Dict, List, Any
 from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum
-import networkx as nx
 
 from ..adapters.base import ValidationTask
 
@@ -72,15 +71,12 @@ class ChangeAnalyzer:
         """
         Analyze a single file to determine its risk level.
         """
-        # Determine file type and change type
         change_type = self._get_change_type(file_path, full_path)
         file_ext = Path(file_path).suffix.lower()
         
-        # Calculate base risk score
         risk_score = 0.0
         risk_factors = []
         
-        # File type risk assessment
         if self._is_api_file(file_path):
             risk_score += self.risk_weights.get("api_surface_changes", 3.0)
             risk_factors.append("api_surface_changes")
@@ -109,13 +105,11 @@ class ChangeAnalyzer:
             risk_score += self.risk_weights.get("utility_functions", 1.0)
             risk_factors.append("utility_functions")
         
-        # Additional risk factors based on file content
         if os.path.exists(full_path):
             content_risk = self._analyze_file_content(full_path)
             risk_score += content_risk["score"]
             risk_factors.extend(content_risk["factors"])
         
-        # Calculate lines changed
         lines_changed = self._count_lines_changed(full_path)
         risk_score *= (1 + lines_changed / 100)  # Scale by change magnitude
         
@@ -218,7 +212,6 @@ class ChangeAnalyzer:
             with open(full_path, 'r', encoding='utf-8') as f:
                 content = f.read()
                 
-                # Check for critical patterns
                 critical_patterns = [
                     (r'eval\s*\(', 'eval_usage'),
                     (r'exec\s*\(', 'exec_usage'),
@@ -233,7 +226,6 @@ class ChangeAnalyzer:
                         score += 0.5
                         factors.append(factor)
                 
-                # Check for SQL injection patterns
                 sql_patterns = [
                     r'SELECT\s+.*\+.*FROM',
                     r'INSERT\s+.*\+.*INTO',
@@ -247,7 +239,6 @@ class ChangeAnalyzer:
                         factors.append('sql_injection_risk')
                         break
                 
-                # Check for error-prone constructs
                 error_prone_patterns = [
                     (r'catch\s*\(\s*\w+\s*\)\s*\{', 'bare_catch'),
                     (r'Promise\.resolve\(\s*\)', 'unnecessary_promise'),

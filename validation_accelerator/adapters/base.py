@@ -120,9 +120,8 @@ class MockAdapter(BaseAdapter):
     
     def validate(self, task: ValidationTask) -> ValidationResult:
         """Mock validation that simulates different outcomes."""
-        time.sleep(0.1)  # Simulate some work
+        time.sleep(0.1)
         
-        # Simulate different outcomes based on task name
         if "fail" in task.name.lower():
             return ValidationResult(
                 task_id=task.id,
@@ -132,7 +131,7 @@ class MockAdapter(BaseAdapter):
                 metadata={"mock": True}
             )
         elif "timeout" in task.name.lower() and self.config.get("simulate_timeout", False):
-            time.sleep(2)  # Simulate timeout
+            time.sleep(2)
             return ValidationResult(
                 task_id=task.id,
                 status=ValidationResultStatus.TIMEOUT,
