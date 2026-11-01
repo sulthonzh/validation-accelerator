@@ -69,7 +69,7 @@ jobs:
         fail_ci_if_error: true
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, svr1]
     timeout-minutes: 15
     steps:
     - uses: actions/checkout@v7
@@ -93,7 +93,7 @@ jobs:
         isort --check-only --diff .
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, svr1]
     timeout-minutes: 15
     needs: [test, lint]
     steps:
