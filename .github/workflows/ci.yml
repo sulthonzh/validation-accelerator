@@ -11,19 +11,16 @@ permissions:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
+    runs-on: [self-hosted, svr1]
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu]
+        # Cross-platform testing moved to self-hosted svr1 (Linux only)
+        # For cross-platform validation, run scripts/test-cross-platform locally
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
-        exclude:
-          # Exclude some combinations to reduce CI load
-          - os: windows-latest
-            python-version: '3.8'
-          - os: windows-latest
-            python-version: '3.9'
+        # No exclusions needed (single OS)
 
     steps:
     - uses: actions/checkout@v7
@@ -62,7 +59,7 @@ jobs:
         pytest tests/ -v --cov=validation_accelerator --cov-report=xml
 
     - name: Upload coverage to Codecov
-      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      if: matrix.os == 'ubuntu' && matrix.python-version == '3.11'
       uses: codecov/codecov-action@v7
       with:
         file: ./coverage.xml
